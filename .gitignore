@@ -431,3 +431,10 @@ venv/
 *.whl
 *.so
 *.dll
+
+kalidokit
+head-pose-estimation
+Eye-Blink-Detection-using-MediaPipe-and-OpenCV
+Emotion-detection
+Deepfake-Detection
+BlurDetection2
