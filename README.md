@@ -1,11 +1,3 @@
-Below is a **clean, well-structured, copy-paste-ready README.md** in **proper Markdown**, refined from what you shared.
-I’ve **kept your content**, but made it **clearer, readable, and GitHub-friendly**, without changing your core ideas.
-
-You can **directly paste this into `README.md`** 👇
-
----
-
-```markdown
 # 🔍 Real-Time Deepfake Video Detection using Blink Behavior Analysis
 
 A lightweight, real-time deepfake video detection system that analyzes **human blink behavior** using **MediaPipe Face Mesh** and **OpenCV**.
@@ -260,16 +252,9 @@ Please use responsibly and respect privacy.
 
 ⭐ **Star this repository if you find it useful!**
 Made with ❤️ for a safer digital world.
-
-```
-
----
-
-If you want next, I can:
-- Shorten this for **hackathon judges**
-- Create a **1-page README version**
 - Add **badges** (Python, OpenCV, MediaPipe)
 - Rename the project (simple & apt, not “professional”)
 
 Just tell me 👍
 ```
+
