@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🔍 Real-Time Deepfake Video Detection System
 
 A comprehensive, real-time deepfake detection prototype that analyzes **human facial behavior and visual artifacts** using MediaPipe Face Mesh and OpenCV. This system uses **multi-signal rule-based behavioral analysis** with an explainable suspicion scoring system.
