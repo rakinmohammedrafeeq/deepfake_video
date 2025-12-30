@@ -4,10 +4,15 @@
 # Core dependencies
 opencv-python>=4.5.0        # Computer vision and video processing
 mediapipe>=0.10.0           # Google's ML solutions for face mesh detection
-numpy>=1.19.0               # Numerical computing for EAR calculations
+numpy>=1.19.0               # Numerical computing for calculations
 
-# Optional: For better performance
-# opencv-contrib-python>=4.5.0  # Additional OpenCV modules (if needed)
+# The system uses these features:
+# - MediaPipe Face Mesh (478 landmarks including iris)
+# - OpenCV for video capture and display
+# - NumPy for mathematical operations (EAR, MAR, blur detection, etc.)
+
+# All detection is rule-based and CPU-only, no GPU required
+# No additional ML models need to be downloaded
 
 # Python version requirement: 3.8+
 

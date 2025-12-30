@@ -1,468 +1,380 @@
-# 🔍 Real-Time Deepfake Video Detection using Blink Behavior Analysis
+# 🔍 Real-Time Deepfake Video Detection System
 
-A lightweight, real-time deepfake detection system that analyzes human blink patterns using MediaPipe Face Mesh and OpenCV. This project uses **rule-based behavioral analysis** instead of heavy deep learning models, making it suitable for **edge devices, mobile deployment, and offline operation**.
+A comprehensive, real-time deepfake detection prototype that analyzes **human facial behavior and visual artifacts** using MediaPipe Face Mesh and OpenCV. This system uses **multi-signal rule-based behavioral analysis** with an explainable suspicion scoring system.
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10+-green.svg)](https://google.github.io/mediapipe/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-4.5+-red.svg)](https://opencv.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CPU Only](https://img.shields.io/badge/CPU-Only-orange.svg)]()
 
 ---
 
 ## 🎯 Key Features
 
-- ✅ **Real-time detection** on webcam or video files
-- ✅ **No heavy ML models** - pure rule-based analysis
-- ✅ **Lightweight & fast** - runs on CPU, suitable for edge devices
-- ✅ **Explainable AI** - shows exact reasons for suspicion
-- ✅ **Offline capable** - no internet connection required
-- ✅ **Visual feedback** - real-time overlay with suspicion score
+- ✅ **Real-time detection** - Works with webcam or video files
+- ✅ **7 detection signals** - Blink, blur, head pose, mouth, eye tracking & more
+- ✅ **CPU-only execution** - No GPU required, lightweight
+- ✅ **Explainable AI** - Shows exact reasons for suspicion with scores
+- ✅ **1280x720 display** - Large, clear output window
+- ✅ **No ML training needed** - Pure rule-based analysis
+- ✅ **Single source of truth** - MediaPipe Face Mesh (478 landmarks)
+
+---
+
+## 🎭 What Gets Detected
+
+This system analyzes **facial behavior and visual artifacts** to identify deepfakes:
+
+### 👁️ Eye & Blink Analysis
+| Detection | Description |
+|-----------|-------------|
+| **Blink Count** | Total number of blinks detected |
+| **Blink Rate** | Blinks per minute (normal: 8-30/min) |
+| **Blink Duration** | How long each blink lasts (normal: 100-400ms) |
+| **Eye Aspect Ratio (EAR)** | Real-time eye openness measurement |
+| **No-Blink Duration** | Longest time without blinking |
+| **Blink Interval Regularity** | Coefficient of Variation (CV) of blink timing |
+| **Iris Position** | Eye gaze direction tracking |
+
+### 🗣️ Mouth Analysis
+| Detection | Description |
+|-----------|-------------|
+| **Mouth Aspect Ratio (MAR)** | Mouth openness measurement |
+| **Mouth Movement Consistency** | Detects robotic/unnatural mouth patterns |
+| **Lip Movement Tracking** | Monitors upper/lower lip positions |
+
+### 🔄 Head Pose Analysis
+| Detection | Description |
+|-----------|-------------|
+| **Yaw** | Left-right head rotation (degrees) |
+| **Pitch** | Up-down head tilt (degrees) |
+| **Roll** | Head tilt to shoulder (degrees) |
+| **Head Movement History** | Tracks head motion over time |
+| **Head-Eye Coordination** | Checks if eyes move naturally with head |
+
+### 🔍 Face Quality Analysis
+| Detection | Description |
+|-----------|-------------|
+| **Face Blur Score** | Variance of Laplacian (sharpness measure) |
+| **Face Smoothness** | Detects unnatural AI smoothing |
+| **Face ROI Extraction** | Isolates face region for analysis |
+
+### 📊 Behavioral Pattern Analysis
+| Detection | Description |
+|-----------|-------------|
+| **Temporal Consistency** | Patterns over 60-second rolling window |
+| **Movement Synchronization** | Head vs eye vs mouth coordination |
+| **Natural Variability** | Human randomness vs robotic patterns |
 
 ---
 
 ## 🧠 How It Works
 
-Deepfake videos often exhibit unnatural blink patterns because:
-1. Early deepfake models were trained on datasets with eyes mostly open
-2. AI-generated faces struggle to replicate natural eye movement dynamics
-3. Human blinking has natural irregularity that's hard to synthesize
+Deepfake videos often exhibit unnatural patterns:
+1. Abnormal or absent blinking behavior
+2. Unnaturally smooth/blurry face texture
+3. Inconsistent head-eye movement coordination
+4. Robotic, too-regular facial movements
+5. Unnatural blink timing and duration
 
-### Detection Rules (Suspicion Score System)
+### The 7 Detection Rules (Suspicion Score 0-100)
 
-Our system analyzes **4 key behavioral indicators**:
+| Rule | Signal | Max Points | What It Detects |
+|------|--------|------------|-----------------|
+| 🚨 **1** | Very low blink rate (<3/min) | **+25** | Deepfakes often don't blink |
+| 🚨 **2** | Long stare (>25 seconds) | **+15** | Unnatural extended staring |
+| 🚨 **3** | Robotic blink timing (CV<0.10) | **+15** | Too-regular blink intervals |
+| 🚨 **4** | Unnatural blink speed (<100ms) | **+10** | Snap blinks from AI |
+| 🚨 **5** | Face too smooth (blur<50) | **+15** | Neural network smoothing artifacts |
+| 🚨 **6** | Head-eye mismatch | **+10** | Head moves but eyes don't track |
+| 🚨 **7** | Robotic mouth movement | **+10** | Too-consistent mouth patterns |
 
-| Rule | Indicator | Points | Rationale |
-|------|-----------|--------|-----------|
-| 🚨 **Rule 1** | Blink rate < 3/min | **+50** | Humans rarely blink this infrequently |
-| 🚨 **Rule 2** | No blink > 25 seconds | **+30** | Unnatural staring without breaks |
-| 🚨 **Rule 3** | CV < 0.10 (robotic) | **+30** | AI blinking is too evenly spaced |
-| 🚨 **Rule 4** | Blink < 100ms | **+20** | Unnaturally fast "snap" blinks |
+### Decision Thresholds
 
-**Suspicion Score Thresholds:**
-- **≥90 points** → 100% confidence → "DEEPFAKE DETECTED"
-- **≥70 points** → 85% confidence → "Highly Suspicious"
-- **≥50 points** → 70% confidence → "Suspicious"
-- **≥30 points** → 50% confidence → "Possibly Suspicious"
-- **<30 points** → Low suspicion → "Likely Real"
-
----
-
-## 📊 Technical Details
-
-### Eye Aspect Ratio (EAR)
-
-We use the Eye Aspect Ratio formula to detect blinks:
-
-```
-EAR = (||p2-p6|| + ||p3-p5||) / (2 * ||p1-p4||)
-```
-
-Where `p1-p6` are specific eye landmark points from MediaPipe Face Mesh.
-
-**Blink Detection Logic:**
-- EAR drops below threshold (0.25) → eyes closing
-- Stays below for 3+ consecutive frames → valid blink
-- Track timing, duration, and intervals
-
-### Behavioral Metrics Analyzed
-
-1. **Blink Frequency** - Blinks per minute over rolling 60s window
-2. **Interval Regularity** - Coefficient of Variation (CV = σ/μ) of inter-blink intervals
-3. **Max Stare Duration** - Longest period without blinking
-4. **Blink Duration** - Time eyes remain closed per blink (100-400ms normal)
+| Suspicion Score | Result |
+|-----------------|--------|
+| **≥ 70** | 🔴 **LIKELY DEEPFAKE** |
+| **40 - 69** | 🟡 **SUSPICIOUS** |
+| **< 40** | 🟢 **LIKELY REAL** |
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Python 3.8 or higher
-- Webcam (for real-time detection)
-- Windows/Linux/macOS
-
 ### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/deepfake-detection.git
-   cd deepfake-detection
-   ```
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd deepfake_video
 
-2. **Install dependencies:**
-   ```bash
-   pip install opencv-python mediapipe numpy
-   ```
+# Install dependencies
+pip install -r deepfake_requirements.txt
+```
 
-   Or use requirements file:
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Requirements
 
-3. **Run the detector:**
-   ```bash
-   python face_mesh.py
-   ```
+```
+opencv-python>=4.5.0
+mediapipe>=0.10.0
+numpy>=1.19.0
+```
 
-4. **Exit:** Press `ESC` to stop and see the final analysis summary.
+### Usage
 
----
-
-## 💻 Usage
-
-### Real-time Webcam Detection
-
-```python
+```bash
+# Webcam mode (default)
 python face_mesh.py
+
+# Video file mode
+python face_mesh.py path/to/video.mp4
 ```
 
-The system will:
-- Open your default webcam
-- Detect facial landmarks in real-time
-- Track blink behavior continuously
-- Display suspicion score and detection result
-- Show reasons for any suspicious behavior
+### Controls
 
-### Analyzing Video Files
-
-Modify line 471 in `face_mesh.py`:
-
-```python
-# Change from webcam (0) to video file path
-cap = cv2.VideoCapture("path/to/your/video.mp4")
-```
+| Key | Action |
+|-----|--------|
+| `ESC` | Exit and show final summary |
+| `R` | Reset analysis (clear all data) |
 
 ---
 
-## 📸 Screenshot Examples
+## 📊 Real-Time Display
 
-### Real Video (Low Suspicion)
+The system shows a **1280x720** output window with two information panels:
+
+### Left Panel - Real-Time Metrics
+```
+┌─────────────────────┐
+│ REAL-TIME METRICS   │
+│ Blinks: 12          │
+│ EAR: 0.285          │
+│ MAR: 0.045          │
+│ Yaw: 2.3  Pitch: -5 │
+│ Roll: 1.2  Blur: 156│
+│ LIVE                │
+└─────────────────────┘
+```
+
+### Right Panel - Detection Results
 ```
 ┌─────────────────────────────────────┐
 │ DEEPFAKE DETECTION                  │
-│ Likely Real                         │
-│ Suspicion Score: 15/100             │
+│ LIKELY REAL                         │
+│ Suspicion Score: 12/100             │
 │ ████░░░░░░░░░░░░░░░░░░░░░░░░░░     │
-│ Confidence: 85%                     │
-│ Blink Rate: 18.3/min | Time: 45s   │
-│ Max No-Blink: 8.2s                  │
+│ --- ANALYSIS METRICS ---            │
+│ Blink Rate: 16.2/min                │
+│ Avg Blink Duration: 145ms           │
+│ Max No-Blink: 5.3s                  │
+│ Face Blur Score: 234                │
+│ Head Pose: Y:2 P:-3 R:1             │
+│ Analysis Time: 32s                  │
+│ --- DETECTION REASONS ---           │
 │ ✅ Normal blink patterns detected   │
-└─────────────────────────────────────┘
-```
-
-### Deepfake Video (High Suspicion)
-```
-┌─────────────────────────────────────┐
-│ DEEPFAKE DETECTION                  │
-│ DEEPFAKE DETECTED                   │
-│ Suspicion Score: 95/100             │
-│ ██████████████████████████████████ │
-│ Confidence: 100%                    │
-│ Blink Rate: 2.1/min | Time: 52s    │
-│ Max No-Blink: 31.5s                 │
-│ 🚨 Very low blink rate: 2.1/min     │
-│ 🚨 Long stare: 31.5s without blink  │
-│ 🚨 Robotic blink pattern (CV=0.08)  │
+│ ✅ Natural facial movements         │
 └─────────────────────────────────────┘
 ```
 
 ---
 
-## 🎛️ Configuration
+## 🔬 Technical Details
 
-Adjust detection sensitivity by modifying thresholds in `face_mesh.py`:
+### MediaPipe Face Mesh
+- **478 facial landmarks** including iris tracking
+- Single source for all facial feature detection
+- `refine_landmarks=True` enables iris landmarks
+
+### Signals Computed
+
+| Signal | Method | Landmarks Used |
+|--------|--------|----------------|
+| **Eye Aspect Ratio (EAR)** | Vertical/horizontal eye ratio | 6 points per eye |
+| **Blink Detection** | EAR threshold + consecutive frames | Eye landmarks |
+| **Head Pose** | cv2.solvePnP with 3D model | 6 key facial points |
+| **Face Blur** | Variance of Laplacian on face ROI | All face landmarks for ROI |
+| **Mouth Aspect Ratio** | Vertical/horizontal mouth ratio | Lip landmarks |
+| **Iris Position** | Relative position in eye bounds | Iris landmarks (468-477) |
+
+### Eye Aspect Ratio Formula
+
+```
+EAR = (||p2-p6|| + ||p3-p5||) / (2 * ||p1-p4||)
+```
+
+Where p1-p6 are specific eye landmark points. EAR drops below 0.25 when eyes close.
+
+### Head Pose Estimation
+
+Uses 6 key landmarks mapped to 3D model points:
+- Nose tip, Chin, Left/Right eye corners, Left/Right mouth corners
+- Solved using `cv2.solvePnP` to extract Yaw, Pitch, Roll angles
+
+---
+
+## ⚙️ Configuration
+
+All thresholds can be adjusted in `face_mesh.py`:
 
 ```python
-# Blink detection sensitivity
-EAR_THRESHOLD = 0.25          # Lower = more sensitive
-CONSEC_FRAMES = 3             # Higher = fewer false positives
+# Blink detection
+EAR_THRESHOLD = 0.25              # Eye closed threshold
+CONSEC_FRAMES = 3                 # Frames for valid blink
 
-# Deepfake detection thresholds
-VERY_LOW_BLINK_RATE = 3       # Blinks/min threshold
-MAX_NO_BLINK_THRESHOLD = 25.0 # Seconds
-ROBOTIC_CV_THRESHOLD = 0.10   # Regularity threshold
-MIN_HUMAN_BLINK_DURATION = 0.1 # Seconds (100ms)
+# Rule 1: Blink rate
+VERY_LOW_BLINK_RATE = 3           # Extremely suspicious
+LOW_BLINK_RATE = 8                # Moderately suspicious
+
+# Rule 2: Stare duration
+MAX_NO_BLINK_THRESHOLD = 25.0     # Seconds
+
+# Rule 3: Blink regularity
+ROBOTIC_CV_THRESHOLD = 0.10       # CV below = robotic
+
+# Rule 4: Blink duration
+MIN_HUMAN_BLINK_DURATION = 0.1    # 100ms minimum
+MAX_HUMAN_BLINK_DURATION = 0.4    # 400ms maximum
+
+# Rule 5: Face blur
+BLUR_THRESHOLD_SUSPICIOUS = 80    # Variance threshold
+BLUR_THRESHOLD_VERY_SUSPICIOUS = 50
+
+# Rule 6: Head-eye mismatch
+HEAD_EYE_MISMATCH_THRESHOLD = 0.5
+
+# Rule 7: Mouth consistency
+MOUTH_CV_THRESHOLD_SUSPICIOUS = 0.05
+
+# Display
+OUTPUT_WIDTH = 1280
+OUTPUT_HEIGHT = 720
 ```
 
 ---
 
-## 📈 Performance
+## 📈 Session Summary
 
-### System Requirements
-- **CPU:** Any modern processor (Intel/AMD/ARM)
-- **RAM:** 2GB minimum, 4GB recommended
-- **Camera:** 720p or higher recommended
-- **OS:** Windows 10+, Ubuntu 18.04+, macOS 10.14+
+When you exit (ESC), a detailed summary is printed:
 
-### Speed
-- **Frame Rate:** 25-30 FPS on typical laptop CPU
-- **Latency:** <50ms per frame processing
-- **Startup Time:** ~2 seconds for MediaPipe initialization
+```
+============================================================
+          DEEPFAKE DETECTION SESSION SUMMARY
+============================================================
+Total blinks detected: 18
+Session duration: 45.2 seconds
+Max no-blink duration: 4.8 seconds
+------------------------------------------------------------
+🔍 FINAL RESULT: LIKELY REAL
+📊 Suspicion Score: 15/100
+📈 Confidence: 85.0%
+👁️  Blink Rate: 23.9 blinks/min
+⏱️  Interval Regularity (CV): 0.456
+⚡ Avg Blink Duration: 142ms
+🔍 Avg Face Blur Score: 267
+------------------------------------------------------------
+Detection Reasons:
+  ✅ Normal blink patterns detected
+  ✅ Natural facial movements
+============================================================
+```
 
-### Accuracy Considerations
+---
 
-✅ **Strengths:**
-- High accuracy on older deepfakes (pre-2020)
-- No false positives on normal human behavior
-- Excellent for real-time screening
+## 📁 Project Structure
 
-⚠️ **Limitations:**
-- Newer deepfakes with sophisticated blink synthesis may evade detection
-- Requires clear face visibility (front-facing, good lighting)
-- May flag people with medical conditions affecting blinking
-- Not suitable as sole evidence - use as screening tool
+```
+deepfake_video/
+├── face_mesh.py                    # Main detection script
+├── deepfake_requirements.txt       # Python dependencies
+├── README.md                       # This file
+├── DEEPFAKE_DETECTION_README.md    # Additional documentation
+│
+├── BlurDetection2/                 # Blur detection reference
+│   └── blur_detection/
+│       └── detection.py            # Variance of Laplacian
+│
+├── Eye-Blink-Detection-.../        # Blink detection reference
+│   ├── blink_counter.py
+│   ├── FaceMeshModule.py
+│   └── utils.py
+│
+├── head-pose-estimation/           # Head pose reference
+│   ├── pose_estimation.py
+│   └── main.py
+│
+└── Deepfake-Detection/             # CNN-based detection (reference)
+    └── detect_from_video.py
+```
+
+---
+
+## ⚠️ Limitations
+
+This is a **research prototype** with limitations:
+
+- ❌ Not production-ready - for research/education only
+- ❌ High-quality modern deepfakes may evade detection
+- ❌ Requires clear, front-facing face visibility
+- ❌ Lighting affects blur detection accuracy
+- ❌ Short videos may not accumulate enough data
+- ❌ Medical conditions affecting blinking may cause false positives
 
 ---
 
 ## 🔬 Scientific Background
 
 ### Normal Human Blink Patterns
-
-- **Frequency:** 15-20 blinks per minute (average)
-- **Range:** 8-30 blinks per minute (acceptable)
+- **Frequency:** 15-20 blinks/minute (average)
+- **Range:** 8-30 blinks/minute (acceptable)
 - **Duration:** 100-400 milliseconds per blink
-- **Interval Variability:** CV typically 0.3-0.7 (natural variation)
-- **Max Stare:** Rarely exceeds 20 seconds without discomfort
+- **Interval Variability:** CV typically 0.3-0.7
 
-### Research References
+### Why Deepfakes Fail at Blinking
+1. Training data often has eyes open (selection bias)
+2. Eye region is geometrically complex
+3. Temporal consistency is hard to maintain
+4. Natural randomness is difficult to synthesize
 
-1. **Li, Y., et al. (2018)** - "In Ictu Oculi: Exposing AI Created Fake Videos by Detecting Eye Blinking"
-2. **Farid, H. (2019)** - "DeepFake Detection: An Unstable Arms Race"
-3. **Bentivoglio, A.R., et al. (1997)** - "Analysis of blink rate patterns in normal subjects"
-
----
-
-## 🛠️ Architecture
-
-### Components
-
-```
-face_mesh.py (Main Application)
-├── MediaPipe Face Mesh → Facial landmark detection (468 points)
-├── Eye Aspect Ratio (EAR) → Blink detection algorithm
-├── Behavioral Analysis → Statistical pattern analysis
-└── Visualization → Real-time overlay rendering
-```
-
-### Data Flow
-
-```
-Camera/Video Input
-    ↓
-MediaPipe Face Mesh (468 landmarks)
-    ↓
-Eye Landmark Extraction (6 points per eye)
-    ↓
-EAR Calculation (Real-time)
-    ↓
-Blink Detection (Threshold + Temporal)
-    ↓
-Behavioral Metrics (Frequency, Duration, Regularity)
-    ↓
-Suspicion Score (Rule-based)
-    ↓
-Classification + Confidence
-    ↓
-Visual Overlay + Terminal Summary
-```
-
----
-
-## 🔧 Development
-
-### Project Structure
-
-```
-deepfake_video/
-├── face_mesh.py                 # Main detection script
-├── requirements.txt             # Python dependencies
-├── README.md                    # This file
-├── LICENSE                      # Project license
-├── Eye-Blink-Detection-using-MediaPipe-and-OpenCV/
-│   ├── blink_counter.py        # Original blink detection reference
-│   ├── FaceMeshModule.py       # Face mesh utilities
-│   └── utils.py                # Drawing utilities
-└── mediapipe_src/              # MediaPipe source (if needed)
-```
-
-### Extending the System
-
-#### Add New Detection Rules
-
-```python
-# In analyze_blink_behavior() function
-if your_new_metric > threshold:
-    suspicion_score += 25
-    reasons.append("Your detection reason")
-```
-
-#### Integrate with Other Systems
-
-```python
-from face_mesh import analyze_blink_behavior, calculate_ear
-
-# Your integration code here
-result, confidence, reasons, metrics = analyze_blink_behavior(time.time())
-```
+### References
+- Li, Y., et al. (2018) - "In Ictu Oculi: Exposing AI Created Fake Videos by Detecting Eye Blinking"
+- Bentivoglio, A.R., et al. (1997) - "Analysis of blink rate patterns in normal subjects"
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Areas for improvement:
-
-- [ ] Add video file batch processing
-- [ ] Export detection results to JSON/CSV
-- [ ] Add more behavioral indicators (head movement, gaze direction)
-- [ ] Optimize for mobile deployment (TensorFlow Lite)
-- [ ] Create GUI interface
-- [ ] Add multi-face tracking
+Areas for improvement:
+- [ ] Add batch video processing with CSV export
 - [ ] Implement audio-visual sync analysis
-
-### Contribution Guidelines
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- [ ] Add more behavioral indicators
+- [ ] Create GUI interface
+- [ ] Optimize for mobile/edge deployment
 
 ---
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - See [LICENSE](LICENSE) file.
 
 ---
 
-## 🙏 Acknowledgments
+## 🛠️ Troubleshooting
 
-- **Google MediaPipe** - For the excellent Face Mesh model
-- **Eye Blink Detection Reference** - Based on concepts from the cloned repository
-- **Research Community** - For pioneering work in deepfake detection
+### "No face detected"
+- Ensure good lighting
+- Face the camera directly
+- Check webcam permissions
 
----
+### Low frame rate
+- Close other applications
+- Reduce `OUTPUT_WIDTH` and `OUTPUT_HEIGHT`
+- Ensure no other processes using camera
 
-## 📞 Contact & Support
-
-- **Issues:** [GitHub Issues](https://github.com/yourusername/deepfake-detection/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/deepfake-detection/discussions)
-- **Email:** your.email@example.com
-
----
-
-## 🔮 Future Roadmap
-
-### Version 2.0 (Planned)
-- [ ] Multi-modal analysis (audio + video sync)
-- [ ] Facial expression micro-analysis
-- [ ] Head pose estimation consistency
-- [ ] Temporal coherence checking
-- [ ] Integration with existing deepfake datasets for validation
-
-### Version 3.0 (Research)
-- [ ] Hybrid approach: Rules + lightweight neural network
-- [ ] Adversarial robustness testing
-- [ ] Real-time video streaming support (RTMP/WebRTC)
-- [ ] Browser extension for social media
+### MediaPipe errors
+- Update: `pip install --upgrade mediapipe`
+- Check Python version (3.8+ required)
 
 ---
 
-## ⚖️ Ethical Considerations
+**Last Updated:** December 2025
 
-This tool is designed for:
-✅ Research and education
-✅ Media verification and fact-checking
-✅ Content moderation assistance
-✅ Security applications
-
-**Please use responsibly:**
-- Not a replacement for human judgment
-- Consider privacy implications
-- Be aware of potential biases
-- Use as one signal among many for verification
-
----
-
-## 📊 Benchmark Results
-
-### Test Dataset Performance (Sample)
-
-| Video Type | Total Videos | Correct | Accuracy |
-|------------|--------------|---------|----------|
-| Real Videos | 50 | 47 | 94% |
-| Old Deepfakes (2018-2020) | 30 | 29 | 97% |
-| Modern Deepfakes (2021+) | 20 | 12 | 60% |
-| **Overall** | **100** | **88** | **88%** |
-
-*Note: Results vary based on video quality, lighting, and deepfake sophistication*
-
----
-
-## 🎓 Educational Use
-
-This project is ideal for:
-- Computer Vision courses
-- AI Ethics discussions
-- Security and forensics training
-- Understanding deepfake technology
-- Learning MediaPipe and OpenCV
-
-### Tutorial Mode
-
-Set `MIN_ANALYSIS_TIME = 5.0` for faster feedback during demos.
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Issue:** "No module named 'mediapipe'"
-```bash
-pip install mediapipe
-```
-
-**Issue:** Webcam not detected
-```python
-# Try different camera indices
-cap = cv2.VideoCapture(1)  # Try 1, 2, etc.
-```
-
-**Issue:** Low FPS performance
-```python
-# Reduce face mesh complexity
-max_num_faces=1  # Already set
-refine_landmarks=False  # Can disable for speed
-```
-
-**Issue:** False positives
-```python
-# Increase thresholds
-VERY_LOW_BLINK_RATE = 2  # More lenient
-MAX_NO_BLINK_THRESHOLD = 30.0  # Longer allowed
-```
-
----
-
-## 📚 Additional Resources
-
-- [MediaPipe Documentation](https://google.github.io/mediapipe/)
-- [OpenCV Python Tutorials](https://docs.opencv.org/4.x/d6/d00/tutorial_py_root.html)
-- [Deepfake Detection Papers](https://github.com/topics/deepfake-detection)
-- [Eye Blink Detection Research](https://scholar.google.com/scholar?q=eye+blink+detection)
-
----
-
-<div align="center">
-
-**Made with ❤️ for a safer digital world**
-
-⭐ Star this repo if you find it useful!
-
-[Report Bug](https://github.com/yourusername/deepfake-detection/issues) · [Request Feature](https://github.com/yourusername/deepfake-detection/issues) · [Documentation](https://github.com/yourusername/deepfake-detection/wiki)
-
-</div>
-
-#   d e e p f a k e _ v i d e o  
- 
