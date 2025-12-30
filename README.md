@@ -252,9 +252,3 @@ Please use responsibly and respect privacy.
 
 ⭐ **Star this repository if you find it useful!**
 Made with ❤️ for a safer digital world.
-- Add **badges** (Python, OpenCV, MediaPipe)
-- Rename the project (simple & apt, not “professional”)
-
-Just tell me 👍
-```
-
