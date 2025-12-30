@@ -286,24 +286,7 @@ Detection Reasons:
 deepfake_video/
 ├── face_mesh.py                    # Main detection script
 ├── deepfake_requirements.txt       # Python dependencies
-├── README.md                       # This file
-├── DEEPFAKE_DETECTION_README.md    # Additional documentation
-│
-├── BlurDetection2/                 # Blur detection reference
-│   └── blur_detection/
-│       └── detection.py            # Variance of Laplacian
-│
-├── Eye-Blink-Detection-.../        # Blink detection reference
-│   ├── blink_counter.py
-│   ├── FaceMeshModule.py
-│   └── utils.py
-│
-├── head-pose-estimation/           # Head pose reference
-│   ├── pose_estimation.py
-│   └── main.py
-│
-└── Deepfake-Detection/             # CNN-based detection (reference)
-    └── detect_from_video.py
+└── README.md                       # This file
 ```
 
 ---
