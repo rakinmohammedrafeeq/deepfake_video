@@ -1,0 +1,13 @@
+# Deepfake Video Detection - Python Dependencies
+# Install with: pip install -r deepfake_requirements.txt
+
+# Core dependencies
+opencv-python>=4.5.0        # Computer vision and video processing
+mediapipe>=0.10.0           # Google's ML solutions for face mesh detection
+numpy>=1.19.0               # Numerical computing for EAR calculations
+
+# Optional: For better performance
+# opencv-contrib-python>=4.5.0  # Additional OpenCV modules (if needed)
+
+# Python version requirement: 3.8+
+
